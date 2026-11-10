@@ -37,18 +37,30 @@
   const $ = (s) => document.querySelector(s);
 
   /* ---------- personal links ----------
-     Names travel in the link itself (?v=…), lightly encoded so the address
-     doesn't spoil the surprise. Plain ?to=Sarah&from=James works too. */
+     Names travel in the link itself, after the # (…/#v=…), lightly encoded so
+     the address doesn't spoil the surprise. Browsers never send the part after
+     # to the server, so the names and number stay between the two devices.
+     Plain #to=Sarah&from=James works too, and older ?v=… links are still read. */
   const encodeCard = (o) => btoa(unescape(encodeURIComponent(JSON.stringify(o))))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const pageUrl = () => location.href.split(/[?#]/)[0];
   function readCard() {
-    const q = new URLSearchParams(location.search), v = q.get('v');
+    const h = new URLSearchParams(location.hash.slice(1)), q = new URLSearchParams(location.search);
+    const get = (k) => h.get(k) || q.get(k) || '';
+    const v = get('v');
     if (v) {
       try { return JSON.parse(decodeURIComponent(escape(atob(v.replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) {}
     }
-    if (q.get('to') || q.get('from')) return { t: q.get('to') || '', f: q.get('from') || '', w: q.get('wa') || '' };
+    if (get('to') || get('from')) return { t: get('to'), f: get('from'), w: get('wa') };
     return null;
   }
+  /* changing only the # part doesn't reload a page, so do it ourselves */
+  addEventListener('hashchange', () => location.reload());
+  const goTo = (link, url) => link.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (url) history.replaceState(null, '', url);
+    location.reload();
+  });
   const card = readCard();
   const MAKER = !card;                         // no names in the link → show the creator
   if (card) {
@@ -438,7 +450,7 @@
           note.appendChild(sign);
         }
         note.style.display = 'block';
-        const again = $('.again'); again.textContent = 'Changed your mind?'; again.href = location.href;
+        const again = $('.again'); again.textContent = 'Changed your mind?'; again.href = location.href; goTo(again);
         again.style.display = 'inline-block';
         gsap.set([note, again], { autoAlpha: 0 }); gsap.set(note, { y: 16 });
         setupTell('no');
@@ -482,7 +494,7 @@
         return;
       }
       const data = { t, f }; if (w) data.w = w;
-      const url = location.href.split(/[?#]/)[0] + '?v=' + encodeCard(data);
+      const url = pageUrl() + '#v=' + encodeCard(data);
       link.value = url; $('#m-open').href = url;
       $('.m-hint b').textContent = t;
       $('.m-title').textContent = 'Now send it';
@@ -527,7 +539,7 @@
         const sign = document.createElement('small');
         sign.textContent = CONFIG.from ? `With love, ${CONFIG.from}` : 'February 14';
         note.appendChild(sign);
-        const again = $('.again'); again.href = location.href.split(/[?#]/)[0];
+        const again = $('.again'); again.href = pageUrl(); goTo(again, pageUrl());
         again.style.display = 'inline-block'; gsap.set(again, { autoAlpha: 0 });
         setupTell('yes');
         note.style.display = 'block';
