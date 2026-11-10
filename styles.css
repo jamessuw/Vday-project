@@ -93,7 +93,7 @@ body {
 }
 .note small {
   display: block; margin-top: .9em;
-  font: 400 .72rem/1 "Jost", system-ui, sans-serif;
+  font: 400 .75rem/1 "Jost", system-ui, sans-serif;
   letter-spacing: .38em; text-transform: uppercase; color: var(--blush);
 }
 
@@ -141,7 +141,7 @@ body {
 [hidden] { display: none !important; }
 .again {
   display: none; margin-top: 1.6em;
-  font: 400 .72rem/1 "Jost", system-ui, sans-serif;
+  font: 400 .75rem/1 "Jost", system-ui, sans-serif;
   letter-spacing: .3em; text-transform: uppercase;
   color: var(--blush); text-decoration: none;
   padding: .9em 1.2em; border-bottom: 1px solid rgba(148, 67, 90, .4);
@@ -197,3 +197,16 @@ body {
   color: var(--blush);
 }
 .tell { display: inline-block; margin-top: 1.4em; text-decoration: none; }
+
+/* ---------- credit ---------- */
+.credit {
+  position: fixed; z-index: 5;
+  right: max(9px, env(safe-area-inset-right)); top: 50%;
+  writing-mode: vertical-rl;
+  transform: translateY(-50%);
+  font: 400 .75rem/1 "Jost", system-ui, sans-serif;
+  letter-spacing: .05em;
+  color: #9a5a6b;
+  pointer-events: none;
+  user-select: none; -webkit-user-select: none;
+}
