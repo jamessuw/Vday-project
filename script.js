@@ -97,6 +97,7 @@
   const petals = [];           // rose petals
   const fall = [];             // ambient falling petals
   const burst = [];            // celebration petals
+  let shed = false, regrowing = false, bloomLevel = 1;
   let scene, camera, rig, sway, head, dust, baseZ = 8, visH = 5, visW = 8;
   const TILT = 0.52;           // lean the bloom toward the viewer
 
@@ -298,6 +299,7 @@
   }
 
   function bloomTo(level, duration, ease, stagger) {
+    bloomLevel = level;
     petals.forEach(m => {
       const d = m.userData;
       gsap.to(m.rotation, {
@@ -308,6 +310,52 @@
   }
 
   if (renderer) build();
+
+  /* ---------- tap the rose: its own petals let go, outer ones first.
+     When it is nearly bare it grows a fresh bloom. ---------- */
+  const PER_TAP = 3, KEEP = 5;                  // petals lost per tap; regrow when this few remain
+  const targetTilt = (d) => lerp(d.closed, d.open, bloomLevel) + (bloomLevel > 1 ? 0.06 : 0);
+
+  function dropPetals() {
+    const left = petals.filter(m => m.visible);
+    left.slice(-PER_TAP).reverse().forEach((m, k) => {
+      /* a stand-in takes the petal's exact pose and falls; the real one waits, hidden, to regrow */
+      m.updateWorldMatrix(true, false);
+      const f = new THREE.Mesh(m.geometry, m.material);
+      m.matrixWorld.decompose(f.position, f.quaternion, f.scale);
+      scene.add(f);
+      m.visible = false;
+      const d = rand(2.8, 4.4);
+      gsap.timeline({ delay: k * 0.09, onComplete: () => scene.remove(f) })
+        .to(f.position, { x: '+=' + rand(-0.5, 0.5), z: '+=' + rand(0.1, 0.6), duration: 0.5, ease: 'power2.out' })
+        .to(f.position, { y: -(visH * 0.62 + 2.5), duration: d, ease: 'power1.in' }, 0.15)
+        .to(f.position, { x: '+=' + rand(-1.5, 1.5), duration: d, ease: 'sine.inOut' }, 0.5)
+        .to(f.rotation, { x: '+=' + rand(-4, 4), y: '+=' + rand(-3, 3), z: '+=' + rand(-4, 4), duration: d + 0.15, ease: 'power1.in' }, 0);
+    });
+    gsap.fromTo(head.scale, { x: 1.06, y: 1.06, z: 1.06 }, { x: 1, y: 1, z: 1, duration: 0.8, ease: 'elastic.out(1, 0.4)', overwrite: true });
+    if (left.length - PER_TAP <= KEEP) { regrowing = true; gsap.delayedCall(1.1, regrow); }
+  }
+
+  function regrow(quick) {
+    const gone = petals.filter(m => !m.visible);
+    gone.forEach(m => {
+      const d = m.userData, delay = quick ? 0 : d.t * 1.1;
+      m.visible = true;
+      gsap.fromTo(m.scale, { x: 0.01, y: 0.01, z: 0.01 }, { x: 1, y: 1, z: 1, duration: quick ? 0.8 : 1.5, ease: 'back.out(1.3)', delay, overwrite: true });
+      if (!quick) gsap.fromTo(m.rotation, { x: d.closed }, { x: targetTilt(d), duration: 1.9, ease: 'power2.out', delay, overwrite: true });
+    });
+    gsap.delayedCall(quick ? 0.8 : 2.4, () => { regrowing = false; });
+  }
+
+  if (renderer) {
+    const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+    addEventListener('pointerdown', (e) => {
+      if (shed || regrowing || e.target.closest('button, a, input, label')) return;
+      ptr.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+      ray.setFromCamera(ptr, camera);
+      if (ray.intersectObjects(petals.filter(m => m.visible), false).length) dropPetals();
+    });
+  }
 
   addEventListener('pointermove', (e) => {
     state.px = (e.clientX / innerWidth) * 2 - 1;
@@ -420,6 +468,7 @@
 
   /* every petal lets go, outer ones first, and drifts down off the page */
   function shedPetals() {
+    shed = true;
     petals.forEach(m => {
       gsap.delayedCall(0.4 + (1 - m.userData.t) * 2 + rand(0, 0.4), () => {
         gsap.killTweensOf(m.rotation);
@@ -554,6 +603,7 @@
       .to('.glow', { opacity: 1, scale: 1.35, duration: 1.4, overwrite: true }, 0.1);
 
     if (!renderer) return;
+    regrow(true);
     bloomTo(1.18, 1.8, 'elastic.out(1, 0.55)', 0.25);
     gsap.to(state, { droop: 0, duration: 1 });
     gsap.to(rig.scale, { x: 1.12, y: 1.12, z: 1.12, duration: 1.6, ease: 'elastic.out(1, 0.6)' });
