@@ -20,6 +20,7 @@
     noScript: 'okay.',
     noNote: 'Thank you for being honest. I’m glad I asked.',
     wa: '',                            // sender's WhatsApp number, digits with country code
+    tipUrl: '',                        // your tip page, e.g. 'https://saweria.co/yourname' (empty = no button)
     yesMessage: 'I said yes! 🌹',
     noMessage: 'Thank you for the rose 🌹 I’m sorry — not this time.',
     noLines: [
@@ -389,6 +390,16 @@
        .to(elScript, { clipPath: 'inset(-20% -5% -20% -5%)', duration: 1.7, ease: 'power2.inOut' }, 2.9)
        .to(['#yes', '#no'], { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.12 }, 4.1);
   if (MAKER) intro.to(maker, { autoAlpha: 1, y: 0, duration: 1.3 }, 2.2);
+
+  /* "Buy me a coffee": shown on the creator screen and after a Yes, never on the question itself */
+  function showTip(delay) {
+    const tip = $('.tip');
+    if (!CONFIG.tipUrl.startsWith('https://') || !tip.hidden) return;
+    tip.href = CONFIG.tipUrl;
+    tip.hidden = false;
+    gsap.fromTo(tip, { autoAlpha: 0, y: -8 }, { autoAlpha: 1, y: 0, duration: 1, ease: 'power3.out', delay });
+  }
+  if (MAKER) showTip(calm ? 0 : 3.6);
   gsap.to('.glow', { scale: 1.08, duration: 3.2, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 3.4 });
   if (calm) intro.progress(1);
 
@@ -409,7 +420,7 @@
     lastDodge = performance.now();
     const r = no.getBoundingClientRect(), yr = yes.getBoundingClientRect();
     const baseL = r.left - gsap.getProperty(no, 'x'), baseT = r.top - gsap.getProperty(no, 'y');
-    const m = 14, minDist = Math.min(240, innerWidth * 0.4);
+    const m = 26, minDist = Math.min(240, innerWidth * 0.4);   // margin leaves room for the tilt and the landing bounce
     let tx = 0, ty = 0;
     for (let k = 0; k < 40; k++) {
       tx = rand(m, innerWidth - r.width - m);
@@ -441,11 +452,11 @@
     gsap.delayedCall(1.2, () => {
       if (answered) return;
       no.textContent = CONFIG.softNo;
+      noReady = true;                 // a tap while it walks home already counts
       plea.textContent = CONFIG.settleLine;
       gsap.fromTo(plea, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power2.out', overwrite: true });
       gsap.to(yes, { scale: 1, duration: 0.7, ease: 'power2.out', overwrite: true });
-      gsap.to(no, { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.9, ease: 'power3.inOut', overwrite: true,
-        onComplete: () => { noReady = true; } });
+      gsap.to(no, { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.9, ease: 'power3.inOut', overwrite: true });
     });
   }
 
@@ -558,6 +569,13 @@
     });
     link.addEventListener('focus', () => link.select());
     $('#m-wa').addEventListener('input', (e) => e.target.setCustomValidity(''));
+    const more = $('.m-more'), waRow = $('.m-wa-row');
+    more.addEventListener('click', () => {            // reveal the optional WhatsApp field
+      more.hidden = true; more.setAttribute('aria-expanded', 'true');
+      waRow.hidden = false;
+      gsap.fromTo(waRow, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'power3.out' });
+      $('#m-wa').focus();
+    });
     share.addEventListener('click', () => {
       navigator.share({ title: 'A question for you', url: link.value }).catch(() => {});
     });
@@ -591,6 +609,7 @@
         const again = $('.again'); again.href = pageUrl(); goTo(again, pageUrl());
         again.style.display = 'inline-block'; gsap.set(again, { autoAlpha: 0 });
         setupTell('yes');
+        showTip(2.8);
         note.style.display = 'block';
         gsap.set(note, { autoAlpha: 0, y: 16 });
         gsap.set(elScript, { clipPath: 'inset(-20% 100% -20% -5%)' });

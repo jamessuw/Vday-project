@@ -159,30 +159,46 @@ body {
   font-size: clamp(1.9rem, 5vw, 3.2rem); line-height: 1.05;
   text-shadow: 0 0 18px rgba(253, 248, 238, .95), 0 0 4px rgba(253, 248, 238, .9);
 }
-.m-form, .m-result { width: min(100%, 460px); margin-top: clamp(12px, 2.4vh, 24px); }
-.m-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media (max-width: 420px) { .m-fields { grid-template-columns: 1fr; gap: 10px; } }
-.m-fields label { display: block; text-align: left; }
-.m-fields span, .m-hint {
+.m-form, .m-result { width: min(100%, 400px); margin-top: clamp(16px, 3vh, 30px); }
+.m-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+.m-fields label, .m-wa-row { display: block; text-align: left; }
+.m-fields span, .m-wa-row span, .m-hint {
   display: block;
   font: 400 .75rem/1 "Jost", system-ui, sans-serif;
   letter-spacing: .3em; text-transform: uppercase; color: var(--blush);
 }
-.m-fields input, #m-link {
-  width: 100%; margin-top: 8px;
-  font: 500 1.25rem/1.2 "Cormorant Garamond", Georgia, serif;
+/* a field is a single line: no box, just a rule that darkens when you type in it */
+.m-fields input, .m-wa-row input, #m-link {
+  width: 100%; margin-top: 2px;
+  font: 500 1.45rem/1.3 "Cormorant Garamond", Georgia, serif;
   color: var(--cream);
-  background: rgba(255, 255, 255, .78);
-  border: 0; border-radius: 12px;
-  box-shadow: 0 0 0 1px rgba(74, 13, 28, .26) inset;
-  padding: .7em .9em;
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  background: transparent;
+  border: 0; border-bottom: 1px solid rgba(74, 13, 28, .3); border-radius: 0;
+  padding: .3em 0 .32em;
+  transition: border-color .25s ease, box-shadow .25s ease;
 }
-.m-fields input::placeholder { color: rgba(148, 67, 90, .55); font-style: italic; }
-.m-fields input:focus, #m-link:focus { outline: 2px solid var(--rose); outline-offset: 1px; }
-#m-link { font: 400 1rem/1.2 "Jost", system-ui, sans-serif; text-overflow: ellipsis; }
+.m-fields input::placeholder, .m-wa-row input::placeholder { color: rgba(148, 67, 90, .5); font-style: italic; font-weight: 400; }
+.m-fields input:focus, .m-wa-row input:focus, #m-link:focus {
+  outline: none; border-bottom-color: var(--wine); box-shadow: 0 1px 0 0 var(--wine);
+}
+#m-link { font: 400 1rem/1.4 "Jost", system-ui, sans-serif; text-align: center; text-overflow: ellipsis; margin-top: 10px; }
 .m-hint b { font-weight: 500; color: var(--cream); }
-.m-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 18px; }
+/* the optional WhatsApp field stays out of the way until asked for */
+.m-more {
+  appearance: none; background: none; border: 0; cursor: pointer;
+  display: block; margin: 16px auto 0; padding: .7em .6em;
+  font: 400 .875rem/1 "Jost", system-ui, sans-serif; letter-spacing: .02em;
+  color: var(--blush);
+}
+.m-more:hover { color: var(--cream); }
+.m-more:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; border-radius: 6px; }
+.m-wa-row { margin-top: 22px; }
+.m-wa-row em {
+  display: block; margin-top: 8px;
+  font: 400 .8125rem/1.35 "Jost", system-ui, sans-serif; font-style: normal;
+  color: var(--blush);
+}
+.m-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 24px; }
 .m-actions .btn { padding: 1.05em 1.9em 1.05em 2.2em; text-decoration: none; }
 .m-back {
   appearance: none; background: none; border: 0; cursor: pointer; margin-top: 14px;
@@ -190,12 +206,6 @@ body {
   color: var(--blush); padding: .9em 1em;
 }
 .m-back:hover { color: var(--cream); }
-.m-wide { grid-column: 1 / -1; }
-.m-fields em {
-  display: block; margin-top: 7px;
-  font: 400 .78rem/1.35 "Jost", system-ui, sans-serif; font-style: normal;
-  color: var(--blush);
-}
 .tell { display: inline-block; margin-top: 1.4em; text-decoration: none; }
 
 /* ---------- credit ---------- */
@@ -210,3 +220,65 @@ body {
   pointer-events: none;
   user-select: none; -webkit-user-select: none;
 }
+
+/* ---------- small and awkward screens ---------- */
+
+/* Narrow screens: keep everything clear of the host's corner badge and the
+   home-indicator area, so no button ever sits underneath them. */
+@media (max-width: 640px) {
+  .ui, .maker { padding-bottom: max(72px, calc(env(safe-area-inset-bottom) + 72px)); }
+  .m-fields { gap: 18px; }
+}
+
+/* Very small phones: tighten the creator form so the title stays on screen. */
+@media (max-width: 420px) and (max-height: 620px) {
+  .m-title { font-size: 1.7rem; }
+  .m-form, .m-result { margin-top: 10px; }
+  .m-fields { gap: 14px; }
+  .m-fields input, .m-wa-row input { font-size: 1.25rem; }
+  .m-more { margin-top: 8px; }
+  .m-wa-row { margin-top: 12px; }
+  .m-wa-row em { display: none; }
+  .m-actions { margin-top: 14px; }
+}
+
+/* Short screens (a phone held sideways): scale the copy to the height and
+   let the panel scroll rather than push anything off the top. */
+@media (max-height: 520px) {
+  .ui, .maker { justify-content: flex-start; overflow-y: auto; padding-bottom: 20px; padding-top: 12px; }
+  .ui::before, .maker::before { content: ''; margin-top: auto; }
+  .eyebrow, .m-eyebrow { margin-bottom: 6px; }
+  .title .line { font-size: clamp(1.25rem, 7.5vh, 2rem); }
+  .title .script { font-size: clamp(2.6rem, 19vh, 4.6rem); }
+  .m-title { font-size: clamp(1.4rem, 8vh, 2rem); }
+  .note { font-size: 1.05rem; max-width: 46ch; }
+  .note small { margin-top: .5em; }
+  .tell { margin-top: .7em; padding: .8em 2em; }
+  .again { margin-top: .5em; padding: .6em 1em; }
+  .actions { margin-top: 10px; }
+  .m-form, .m-result { margin-top: 8px; }
+  .m-fields { gap: 18px; }
+  .m-fields input, .m-wa-row input { font-size: 1.2rem; }
+  .m-more { margin-top: 4px; padding: .5em; }
+  .m-wa-row { margin-top: 8px; }
+  .m-wa-row em { display: none; }
+  .m-actions { margin-top: 10px; }
+  .m-back { margin-top: 4px; padding: .6em 1em; }
+}
+
+/* ---------- tip link ---------- */
+.tip {
+  position: fixed; z-index: 6;
+  top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left));
+  display: inline-flex; align-items: center; gap: .6em;
+  font: 500 .75rem/1 "Jost", system-ui, sans-serif;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--cream); text-decoration: none;
+  padding: .85em 1.25em .85em 1.05em;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, .72);
+  box-shadow: 0 0 0 1px rgba(74, 13, 28, .26) inset;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.tip:hover { background: #fff; box-shadow: 0 0 0 1px rgba(74, 13, 28, .5) inset; }
+.tip:focus-visible { outline: 2px solid var(--wine); outline-offset: 3px; }
